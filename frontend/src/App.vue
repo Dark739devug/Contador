@@ -8,6 +8,8 @@ const nombre = ref('');
 const correo = ref('');
 const password = ref('');
 const usuario = ref(null);
+const perfiles = ref([]);
+const perfilSeleccionado = ref(null);
 const cargando = ref(false);
 const mensaje = ref('');
 const error = ref('');
@@ -29,7 +31,41 @@ function guardarSesion(data) {
   token.value = data.accessToken;
   usuario.value = data.usuario;
   localStorage.setItem('token', data.accessToken);
-  vista.value = 'perfil';
+  vista.value = 'perfiles';
+  cargarPerfiles();
+}
+
+async function cargarPerfiles() {
+  try {
+    const respuesta = await fetch(`${apiUrl}/usuarios`, {
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
+    const data = await respuesta.json();
+    if (!respuesta.ok) throw new Error(data.message || 'No se pudieron cargar los perfiles.');
+    perfiles.value = data;
+  } catch (e) {
+    error.value = e.message || 'No se pudieron cargar los perfiles.';
+  }
+}
+
+async function abrirPerfil(perfil) {
+  limpiarMensajes();
+  cargando.value = true;
+  try {
+    const respuesta = await fetch(`${apiUrl}/usuarios/${perfil.id}/visitas`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
+    const data = await respuesta.json();
+    if (!respuesta.ok) throw new Error(data.message || 'No se pudo visitar el perfil.');
+    perfilSeleccionado.value = data;
+    perfiles.value = perfiles.value.map((item) => item.id === data.id ? data : item);
+    vista.value = 'perfilVisitado';
+  } catch (e) {
+    error.value = e.message || 'No se pudo visitar el perfil.';
+  } finally {
+    cargando.value = false;
+  }
 }
 
 async function registro() {
@@ -111,7 +147,8 @@ async function cargarPerfil() {
     }
 
     usuario.value = await respuesta.json();
-    vista.value = 'perfil';
+    vista.value = 'perfiles';
+    await cargarPerfiles();
   } catch {
     error.value = 'No se pudo conectar con el servidor.';
   }
@@ -148,6 +185,8 @@ function cerrarSesion() {
   localStorage.removeItem('token');
   token.value = '';
   usuario.value = null;
+  perfiles.value = [];
+  perfilSeleccionado.value = null;
   limpiarFormulario();
   limpiarMensajes();
   vista.value = 'login';
@@ -262,34 +301,48 @@ onMounted(() => {
       <p v-if="error" class="alert error">{{ error }}</p>
     </section>
 
-    <section v-else-if="vista === 'perfil' && usuario" class="card profile-card">
+    <section v-else-if="vista === 'perfiles' && usuario" class="profiles-page">
+      <header class="profiles-header card">
+        <div>
+          <p class="eyebrow">PERFILES CREADOS</p>
+          <h1>Hola, {{ usuario.nombre }}</h1>
+          <p class="subtitle">Selecciona un perfil para visitarlo.</p>
+        </div>
+        <button class="logout" @click="cerrarSesion">Cerrar sesión</button>
+      </header>
+
+      <div class="profiles-grid">
+        <button
+          v-for="perfil in perfiles"
+          :key="perfil.id"
+          class="profile-preview"
+          :disabled="cargando"
+          @click="abrirPerfil(perfil)"
+        >
+          <span class="avatar">{{ perfil.nombre.charAt(0).toUpperCase() }}</span>
+          <strong>{{ perfil.nombre }}</strong>
+          <span>{{ perfil.visitas }} visitas</span>
+        </button>
+      </div>
+
+      <p v-if="perfiles.length === 0 && !error" class="empty">Todavía no hay perfiles creados.</p>
+      <p v-if="error" class="alert error">{{ error }}</p>
+    </section>
+
+    <section v-else-if="vista === 'perfilVisitado' && perfilSeleccionado" class="card profile-card">
       <header class="profile-header">
         <div>
-          <p class="eyebrow">MI PERFIL</p>
-          <h1>{{ usuario.nombre }}</h1>
-          <p class="email">{{ usuario.correo }}</p>
+          <p class="eyebrow">PERFIL VISITADO</p>
+          <h1>{{ perfilSeleccionado.nombre }}</h1>
         </div>
-
-        <button class="logout" @click="cerrarSesion">
-          Cerrar sesión
-        </button>
+        <button class="logout" @click="vista = 'perfiles'">Volver a perfiles</button>
       </header>
 
       <div class="visits-card">
         <span class="visits-label">Total de visitas</span>
-        <strong>{{ usuario.visitas }}</strong>
-        <p>Cada vez que presiones el botón, se suma una visita.</p>
+        <strong>{{ perfilSeleccionado.visitas }}</strong>
+        <p>Tu visita se agregó al abrir este perfil.</p>
       </div>
-
-      <button
-        class="visit-button"
-        :disabled="cargando"
-        @click="sumarVisita"
-      >
-        {{ cargando ? 'Sumando...' : '+ Sumar visita' }}
-      </button>
-
-      <p v-if="mensaje" class="alert success">{{ mensaje }}</p>
       <p v-if="error" class="alert error">{{ error }}</p>
     </section>
   </main>

@@ -41,6 +41,20 @@ export class UsuariosService {
     };
   }
 
+  async listarPerfiles() {
+    const usuarios = await this.usuariosRepository.find({
+      select: {
+        id: true,
+        nombre: true,
+        visitas: true,
+        fechaRegistro: true,
+      },
+      order: { fechaRegistro: 'DESC' },
+    });
+
+    return usuarios;
+  }
+
   async sumarVisita(id: number) {
     const resultado = await this.usuariosRepository
       .createQueryBuilder()
@@ -59,7 +73,6 @@ export class UsuariosService {
     return {
       id: usuario.id,
       nombre: usuario.nombre,
-      correo: usuario.correo,
       visitas: usuario.visitas,
       fechaRegistro: usuario.fecha_registro,
     };

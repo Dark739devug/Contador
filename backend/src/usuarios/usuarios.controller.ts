@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Param,
+  ParseIntPipe,
   Patch,
   Req,
   UseGuards,
@@ -26,8 +28,19 @@ export class UsuariosController {
     return this.usuariosService.obtenerPerfil(req.user.sub);
   }
 
+  @Get()
+  listarPerfiles() {
+    return this.usuariosService.listarPerfiles();
+  }
+
+  // Se conserva para mantener compatibilidad con clientes anteriores.
   @Patch('visitas')
   sumarVisita(@Req() req: RequestConUsuario) {
     return this.usuariosService.sumarVisita(req.user.sub);
+  }
+
+  @Patch(':id/visitas')
+  visitarPerfil(@Param('id', ParseIntPipe) id: number) {
+    return this.usuariosService.sumarVisita(id);
   }
 }
