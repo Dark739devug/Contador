@@ -1,25 +1,33 @@
 import {
-  Body,
   Controller,
-  Param,
-  ParseIntPipe,
+  Get,
   Patch,
-  Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
-import { CrearUsuarioDto } from './dto/crear-usuario.dto';
+import { Request } from 'express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsuariosService } from './usuarios.service';
 
+type RequestConUsuario = Request & {
+  user: {
+    sub: number;
+    correo: string;
+  };
+};
+
 @Controller('usuarios')
+@UseGuards(JwtAuthGuard)
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
-  @Post()
-  registrar(@Body() dto: CrearUsuarioDto) {
-    return this.usuariosService.registrar(dto);
+  @Get('perfil')
+  obtenerPerfil(@Req() req: RequestConUsuario) {
+    return this.usuariosService.obtenerPerfil(req.user.sub);
   }
 
-  @Patch(':id/visitas')
-  sumarVisita(@Param('id', ParseIntPipe) id: number) {
-    return this.usuariosService.sumarVisita(id);
+  @Patch('visitas')
+  sumarVisita(@Req() req: RequestConUsuario) {
+    return this.usuariosService.sumarVisita(req.user.sub);
   }
 }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as dotenv from 'dotenv';
+import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 
 dotenv.config();
@@ -21,6 +22,7 @@ dotenv.config();
           ? { rejectUnauthorized: false }
           : false,
     }),
+    AuthModule,
     UsuariosModule,
   ],
 })

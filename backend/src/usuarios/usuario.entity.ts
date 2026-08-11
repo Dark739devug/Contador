@@ -16,6 +16,9 @@ export class Usuario {
   @Column({ type: 'varchar', length: 150, unique: true })
   correo: string;
 
+  @Column({ type: 'varchar', length: 255 })
+  password: string;
+
   @Column({ type: 'integer', default: 0 })
   visitas: number;
 

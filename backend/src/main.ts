@@ -7,10 +7,10 @@ async function bootstrap() {
 
   app.enableCors({
     origin: process.env.FRONTEND_URL
-      ? process.env.FRONTEND_URL.split(',').map((url) => url.trim())
+      ? process.env.FRONTEND_URL.split(',').map((url: string) => url.trim())
       : true,
     methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   app.useGlobalPipes(
@@ -23,7 +23,7 @@ async function bootstrap() {
   const port = Number(process.env.PORT) || 3000;
   await app.listen(port, '0.0.0.0');
 
-  console.log(`API ejecutándose en puerto ${port}`);
+  console.log(`API ejecutándose en http://localhost:${port}`);
 }
 
 bootstrap();
